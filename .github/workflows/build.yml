@@ -39,5 +39,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          releaseId: ${{ needs.create_release.outputs.id }}
+          releaseId: ${{ github.run_number }}
           args: 'build/libs/*.jar'
