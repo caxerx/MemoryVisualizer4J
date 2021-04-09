@@ -5,7 +5,6 @@ import com.caxerx.memoryvisualizer4j.api.ObjectMapGenerator;
 import com.caxerx.memoryvisualizer4j.layout.classlayout.ClassLayout;
 import com.caxerx.memoryvisualizer4j.layout.objectlayout.*;
 import com.caxerx.memoryvisualizer4j.util.TypeUtils;
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import org.openjdk.jol.info.ClassData;
 import org.openjdk.jol.info.FieldData;
@@ -13,13 +12,9 @@ import org.openjdk.jol.info.FieldLayout;
 import org.openjdk.jol.vm.VirtualMachine;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.SortedSet;
+import java.util.*;
 
 public class JOLObjectMapGenerator implements ObjectMapGenerator {
-    private static final int GENERATION_DEPTH = 12;
-
     @Inject
     LayoutGenerator layoutGenerator;
 
@@ -27,83 +22,112 @@ public class JOLObjectMapGenerator implements ObjectMapGenerator {
     VirtualMachine vm;
 
     @Override
-    public ObjectLayout generateObjectMap(Object object) {
-        return generateObjectMap(object, 0);
+    public ObjectLayoutMap generateObjectMap(Object object) {
+        if (object == null) {
+            return new ObjectLayoutMap(new HashMap<>(), new HashMap<>(), new ObjectLayout("null", new LinkedList<>(), 0));
+        }
+        HashMap<Long, ClassLayout> classLayouts = new HashMap<>();
+        HashMap<Long, ObjectLayout> objectLayouts = new HashMap<>();
+        return generateUnknownTree(object, classLayouts, objectLayouts);
     }
 
-    private ObjectLayout generateArrayMap(Object object, int depth) {
-        if (depth > GENERATION_DEPTH) {
-            return null;
+    private ObjectLayoutMap generateUnknownTree(Object object, HashMap<Long, ClassLayout> classLayouts, HashMap<Long, ObjectLayout> objectLayouts) {
+        if (ClassData.parseInstance(object).isArray()) {
+            return generateArrayTree(object, classLayouts, objectLayouts);
         }
+        return generateObjectTree(object, classLayouts, objectLayouts);
+    }
 
-        if (!object.getClass().isArray()) {
-            throw new RuntimeException("Unexpected Non-array object in generateArrayMap");
-        }
+    private ObjectLayoutMap generateArrayTree(Object object, HashMap<Long, ClassLayout> classLayouts, HashMap<Long, ObjectLayout> objectLayouts) {
+        List<ObjectLayoutFieldItem> fields = new LinkedList<>();
+        long currentAddress = vm.addressOf(object);
+        ClassLayout classLayout = layoutGenerator.generateInstanceClassLayout(object);
+        classLayouts.put(currentAddress, classLayout);
+        ObjectLayout objectLayout = new ObjectLayout(classLayout.getType(), fields, currentAddress);
+        objectLayouts.put(currentAddress, objectLayout);
 
-        ClassLayout layout = this.layoutGenerator.generateInstanceClassLayout(object);
-
-        List<ObjectLayoutFieldItem> items = new ArrayList<>();
-
-        SortedSet<FieldLayout> fields = org.openjdk.jol.info.ClassLayout.parseInstance(object).fields();
+        FieldLayout field = org.openjdk.jol.info.ClassLayout.parseInstance(object).fields().first();
         ClassData classData = ClassData.parseInstance(object);
-
-        if (fields.size() > 1) {
-            throw new RuntimeException("Unexpected field in array class");
-        }
-
-        FieldLayout field = fields.first();
 
         boolean primitive = TypeUtils.isPrimitive(classData.arrayComponentType());
 
         for (int i = 0; i < classData.arrayLength(); i++) {
             Object value = Array.get(object, i);
-            items.add(
-                    primitive ?
-                            new ObjectLayoutPrimitiveFieldItem(String.format("[%d]", i), field.typeClass(), vm.addressOf(object) + field.offset() + (i * (field.size() / classData.arrayLength())), value) :
-                            (value instanceof String ?
-                                    new ObjectLayoutStringFieldItem(String.format("[%d]", i), value.getClass().getCanonicalName(), vm.addressOf(object) + field.offset() + (i * (field.size() / classData.arrayLength())), generateObjectMap(value, depth + 1), (String) value)
-                                    : new ObjectLayoutObjectFieldItem(String.format("[%d]", i), value.getClass().getCanonicalName(), vm.addressOf(object) + field.offset() + (i * (field.size() / classData.arrayLength())), generateObjectMap(value, depth + 1)))
-            );
-        }
-
-        return new ObjectLayout(layout, ImmutableList.copyOf(items), vm.addressOf(object));
-
-    }
-
-    private ObjectLayout generateObjectMap(Object object, int depth) {
-        if (depth > GENERATION_DEPTH) {
-            return null;
-        }
-
-        if (object.getClass().isArray()) {
-            return generateArrayMap(object, depth);
-        }
-
-        ClassLayout layout = this.layoutGenerator.generateInstanceClassLayout(object);
-
-        List<ObjectLayoutFieldItem> items = new ArrayList<>();
-
-        for (FieldData field : ClassData.parseInstance(object).fields()) {
-            Object value = "[Error] Inaccessible";
-            boolean inaccessible = false;
-            try {
-                field.refField().setAccessible(true);
-                value = field.refField().get(object);
-            } catch (IllegalAccessException e) {
-                inaccessible = true;
-            }
-
-            if (TypeUtils.isPrimitive(field.typeClass())) {
-                items.add(new ObjectLayoutPrimitiveFieldItem(field.name(), field.typeClass(), vm.addressOf(object) + field.vmOffset(), value));
+            if (primitive) {
+                fields.add(
+                        new ObjectLayoutPrimitiveFieldItem(String.format("[%d]", i), field.typeClass(), vm.addressOf(object) + field.offset() + (i * (field.size() / classData.arrayLength())), value)
+                );
+            } else if (value instanceof String) {
+                fields.add(
+                        new ObjectLayoutStringFieldItem(String.format("[%d]", i), value.getClass().getCanonicalName(), vm.addressOf(object) + field.offset() + (i * (field.size() / classData.arrayLength())), vm.addressOf(value), (String) value)
+                );
+                if (!objectLayouts.containsKey(vm.addressOf(value))) {
+                    generateUnknownTree(value, classLayouts, objectLayouts);
+                }
+            } else if (value == null) {
+                fields.add(
+                        new ObjectLayoutPrimitiveFieldItem(String.format("[%d]", i), classData.name(), vm.addressOf(object) + field.offset() + (i * (field.size() / classData.arrayLength())), "null")
+                );
             } else {
-                if (value instanceof String && !inaccessible) {
-                    items.add(new ObjectLayoutStringFieldItem(field.name(), value.getClass().getCanonicalName(), vm.addressOf(object) + field.vmOffset(), inaccessible ? null : generateObjectMap(value, depth + 1), (String) value));
-                } else {
-                    items.add(new ObjectLayoutObjectFieldItem(field.name(), value.getClass().getCanonicalName(), vm.addressOf(object) + field.vmOffset(), inaccessible ? null : generateObjectMap(value, depth + 1)));
+                fields.add(
+                        new ObjectLayoutObjectFieldItem(String.format("[%d]", i), value.getClass().getCanonicalName(), vm.addressOf(object) + field.offset() + (i * (field.size() / classData.arrayLength())), vm.addressOf(value))
+                );
+                if (!objectLayouts.containsKey(vm.addressOf(value))) {
+                    generateUnknownTree(value, classLayouts, objectLayouts);
                 }
             }
         }
 
-        return new ObjectLayout(layout, ImmutableList.copyOf(items), vm.addressOf(object));
+        return new ObjectLayoutMap(objectLayouts, classLayouts, objectLayout);
+    }
+
+    private ObjectLayoutMap generateObjectTree(Object object, HashMap<Long, ClassLayout> classLayouts, HashMap<Long, ObjectLayout> objectLayouts) {
+        List<ObjectLayoutFieldItem> fields = new LinkedList<>();
+        long currentAddress = vm.addressOf(object);
+        ClassLayout classLayout = layoutGenerator.generateInstanceClassLayout(object);
+        classLayouts.put(currentAddress, classLayout);
+        ObjectLayout objectLayout = new ObjectLayout(classLayout.getType(), fields, currentAddress);
+        objectLayouts.put(currentAddress, objectLayout);
+
+        for (FieldData field : ClassData.parseInstance(object).fields()) {
+            field.refField().setAccessible(true);
+            if (TypeUtils.isPrimitive(field.typeClass())) {
+                fields.add(generatePrimitiveField(object, field));
+            } else {
+                try {
+                    Object fieldObject = field.refField().get(object);
+                    if (fieldObject != null && !objectLayouts.containsKey(vm.addressOf(fieldObject))) {
+                        generateUnknownTree(fieldObject, classLayouts, objectLayouts);
+                    }
+                } catch (IllegalAccessException e) {
+                    // ignore
+                } finally {
+                    fields.add(generateField(object, field));
+                }
+
+            }
+        }
+
+        return new ObjectLayoutMap(objectLayouts, classLayouts, objectLayout);
+    }
+
+    private ObjectLayoutFieldItem generatePrimitiveField(Object object, FieldData field) {
+        try {
+            return new ObjectLayoutPrimitiveFieldItem(field.name(), field.typeClass(), vm.addressOf(object) + field.vmOffset(), field.refField().get(object));
+        } catch (IllegalAccessException e) {
+            return new ObjectLayoutPrimitiveFieldItem(field.name(), field.typeClass(), vm.addressOf(object) + field.vmOffset(), "[Error] Inaccessible");
+        }
+    }
+
+    private ObjectLayoutFieldItem generateField(Object object, FieldData field) {
+        try {
+            Object fieldObject = field.refField().get(object);
+            if (fieldObject instanceof String) {
+                return new ObjectLayoutStringFieldItem(field.name(), field.typeClass(), vm.addressOf(object) + field.vmOffset(), vm.addressOf(fieldObject), (String) fieldObject);
+            }
+            return new ObjectLayoutObjectFieldItem(field.name(), field.typeClass(), vm.addressOf(object) + field.vmOffset(), vm.addressOf(fieldObject));
+        } catch (IllegalAccessException e) {
+            return new ObjectLayoutPrimitiveFieldItem(field.name(), field.typeClass(), vm.addressOf(object) + field.vmOffset(), "[Error] Inaccessible");
+        }
     }
 }

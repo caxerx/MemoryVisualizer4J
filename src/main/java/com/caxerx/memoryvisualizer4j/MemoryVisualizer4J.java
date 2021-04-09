@@ -2,6 +2,7 @@ package com.caxerx.memoryvisualizer4j;
 
 import com.caxerx.memoryvisualizer4j.api.LayoutGenerator;
 import com.caxerx.memoryvisualizer4j.api.MemoryVisualizer;
+import com.caxerx.memoryvisualizer4j.api.ObjectMapGenerator;
 import com.caxerx.memoryvisualizer4j.implementation.JOLModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -12,6 +13,9 @@ public class MemoryVisualizer4J {
 
     @Inject
     private LayoutGenerator layoutGenerator;
+
+    @Inject
+    private ObjectMapGenerator objectMapGenerator;
 
     @Inject
     private MemoryVisualizer memoryVisualizer;
@@ -27,5 +31,9 @@ public class MemoryVisualizer4J {
 
     public static MemoryVisualizer getMemoryVisualizer() {
         return INSTANCE.memoryVisualizer;
+    }
+
+    public static ObjectMapGenerator getObjectMapGenerator() {
+        return INSTANCE.objectMapGenerator;
     }
 }

@@ -1,15 +1,15 @@
 package com.caxerx.memoryvisualizer4j.implementation.visualizer;
 
-import com.caxerx.memoryvisualizer4j.layout.objectlayout.ObjectLayout;
+import com.caxerx.memoryvisualizer4j.layout.objectlayout.ObjectLayoutMap;
 
 import java.io.Serializable;
 
 public class ObjectMapMessage implements Serializable {
     private final String objectType;
     private final long createTime;
-    private final ObjectLayout objectLayout;
+    private final ObjectLayoutMap objectLayout;
 
-    public ObjectMapMessage(String objectType, long createTime, ObjectLayout objectLayout) {
+    public ObjectMapMessage(String objectType, long createTime, ObjectLayoutMap objectLayout) {
         this.objectType = objectType;
         this.createTime = createTime;
         this.objectLayout = objectLayout;
@@ -23,7 +23,7 @@ public class ObjectMapMessage implements Serializable {
         return createTime;
     }
 
-    public ObjectLayout getObjectLayout() {
+    public ObjectLayoutMap getObjectLayout() {
         return objectLayout;
     }
 }

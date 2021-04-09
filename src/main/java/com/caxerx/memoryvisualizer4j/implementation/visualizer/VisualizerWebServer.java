@@ -15,12 +15,21 @@ public class VisualizerWebServer implements StickyBroadcaster {
     private final ArrayList<String> stickyMessage = new ArrayList<>();
     private final HashSet<WsContext> activeSession = new HashSet<>();
 
-    public VisualizerWebServer(int port) {
+    public VisualizerWebServer() {
         Javalin.log = new NonOpLogger();
-        Javalin app = Javalin.create(config -> {
-            config.addStaticFiles("/", "/dist", Location.CLASSPATH);
-            config.addSinglePageRoot("/", "/dist/index.html");
-        }).start(port);
+        Javalin app = null;
+        int port = 20000;
+        while (app == null && port < 30000) {
+            try {
+                app = Javalin.create(config -> {
+                    config.addStaticFiles("/", "/dist", Location.CLASSPATH);
+                    config.addSinglePageRoot("/", "/dist/index.html");
+                }).start(port);
+            } catch (Exception e) {
+                port++;
+            }
+        }
+
         Logger logger = LoggerFactory.getLogger(this.getClass().getSimpleName());
         logger.info("Visualizer Service started at: http://localhost:" + port);
         logger.info("Visualizer Service started. Application will not stop until manually terminate.");

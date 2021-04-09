@@ -1,4 +1,4 @@
-package com.caxerx.memoryvisualizer4j.test;
+package com.caxerx.memoryvisualizer4j.demo;
 
 import org.openjdk.jol.info.ClassData;
 import org.openjdk.jol.info.ClassLayout;

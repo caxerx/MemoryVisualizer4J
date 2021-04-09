@@ -20,7 +20,7 @@ public class JOLLayoutGenerator implements LayoutGenerator {
     }
 
     @Override
-    public ClassLayout generateClassLayout(Class clazz) {
+    public ClassLayout generateClassLayout(Class<?> clazz) {
         org.openjdk.jol.info.ClassLayout layout = org.openjdk.jol.info.ClassLayout.parseClass(clazz);
         List<ClassLayoutItem> items = new ArrayList<>();
         if (layout.headerSize() > 0) {
@@ -41,17 +41,9 @@ public class JOLLayoutGenerator implements LayoutGenerator {
         return new ClassLayout(ImmutableList.copyOf(items), layout.instanceSize(), clazz.getCanonicalName());
     }
 
-    public ArrayLayout getInstanceArrayLayout(Object object) {
-        if (!object.getClass().isArray()) {
-            throw new RuntimeException("The layout is not an array");
-        }
-
+    private ArrayLayout getInstanceArrayLayout(Object object) {
         org.openjdk.jol.info.ClassLayout layout = org.openjdk.jol.info.ClassLayout.parseInstance(object);
         ClassData data = ClassData.parseInstance(object);
-
-        if (layout.fields().size() != 1) {
-            throw new RuntimeException("Unexpected field on array type");
-        }
 
         List<ClassLayoutItem> items = new ArrayList<>();
 

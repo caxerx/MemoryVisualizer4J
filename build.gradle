@@ -46,7 +46,7 @@ generateTypeScript {
     classPatterns = [
             'com.caxerx.memoryvisualizer4j.layout.classlayout.*',
             'com.caxerx.memoryvisualizer4j.layout.objectlayout.*',
-            'com.caxerx.memoryvisualizer4j.implementation.service.ObjectMapMessage'
+            'com.caxerx.memoryvisualizer4j.implementation.visualizer.ObjectMapMessage'
     ]
     excludeClasses = [
             "java.io.Serializable"
