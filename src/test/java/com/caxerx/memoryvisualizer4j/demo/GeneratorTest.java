@@ -21,20 +21,17 @@ public class GeneratorTest {
         long[] t4 = {0, 1000000000L, 2042305823094L};
         TestInnerClass[] t5 = {new TestInnerClass(), new TestInnerClass(), new TestInnerClass()};
 
+        MemoryVisualizer4J.getMemoryVisualizer().registerObject(null);
+        MemoryVisualizer4J.getMemoryVisualizer().registerObject(null, null);
+        MemoryVisualizer4J.getMemoryVisualizer().registerObject(t4, t5);
 
-        MemoryVisualizer4J.getMemoryVisualizer().visualizeObject(new SimpleDataClass());
-        MemoryVisualizer4J.getMemoryVisualizer().visualizeObject(new TestDataClass());
-
-//        long[] t4 = {0, 1000000000L, 2042305823094L};
-        MemoryVisualizer4J.getMemoryVisualizer().visualizeObject(t4);
-        MemoryVisualizer4J.getMemoryVisualizer().visualizeObject(t5);
-//
-        MemoryVisualizer4J.getMemoryVisualizer().visualizeObject(new TestRecursiveRef());
-        MemoryVisualizer4J.getMemoryVisualizer().visualizeObject(new ExampleDataClass());
+        MemoryVisualizer4J.getMemoryVisualizer()
+                .registerObject(new SimpleDataClass())
+                .registerObject(new TestDataClass())
+                .registerObject(new TestRecursiveRef())
+                .registerObject(new ExampleDataClass());
 
         TestInnerClass inner = new TestInnerClass();
-        MemoryVisualizer4J.getMemoryVisualizer().visualizeObject(new SimpleLinkingClass(inner));
-        MemoryVisualizer4J.getMemoryVisualizer().visualizeObject(new SimpleLinkingClass(inner));
 
         SimpleLinkedList list = new SimpleLinkedList();
         list.add(1);
@@ -43,6 +40,11 @@ public class GeneratorTest {
         list.add(4);
         list.add(5);
         list.add(6);
-        MemoryVisualizer4J.getMemoryVisualizer().visualizeObject(list);
+
+        MemoryVisualizer4J.getMemoryVisualizer()
+                .registerObject(new SimpleLinkingClass(inner), new SimpleLinkingClass(inner))
+                .registerObject(list).visualize();
+
+
     }
 }

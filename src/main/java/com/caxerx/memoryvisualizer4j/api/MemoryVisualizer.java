@@ -7,16 +7,15 @@ import com.caxerx.memoryvisualizer4j.layout.objectlayout.ObjectLayoutMap;
  */
 public interface MemoryVisualizer {
     /**
-     * Generate a object map and visualize the generated map.
+     * Register a object that need to be visualize.
      *
      * @param object object to be visualize
      */
-    void visualizeObject(Object object);
+    MemoryVisualizer registerObject(Object... object);
+
 
     /**
-     * Visualize a generated object map.
-     *
-     * @param objectLayout The object map
+     * Generate a object map snapshot and visualize it.
      */
-    void visualizeObjectMap(ObjectLayoutMap objectLayout);
+    MemoryVisualizer visualize();
 }

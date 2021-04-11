@@ -1,6 +1,7 @@
 package com.caxerx.memoryvisualizer4j.implementation.visualizer;
 
 import com.caxerx.memoryvisualizer4j.api.StickyBroadcaster;
+import com.google.gson.Gson;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.websocket.WsContext;
@@ -45,9 +46,10 @@ public class VisualizerWebServer implements StickyBroadcaster {
     }
 
     @Override
-    public void broadcastSticky(String string) {
-        stickyMessage.add(string);
-        activeSession.forEach(session -> session.send(string));
+    public void broadcastSticky(ObjectMapMessage msg) {
+        String json = new Gson().toJson(msg);
+        stickyMessage.add(json);
+        activeSession.forEach(session -> session.send(json));
     }
 
 }

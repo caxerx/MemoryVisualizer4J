@@ -7,4 +7,8 @@ public class ObjectLayoutObjectFieldItem extends ObjectLayoutFieldItem {
         super(name, type, memoryAddress);
         this.objectAddress = objectAddress;
     }
+
+    public long getObjectAddress() {
+        return objectAddress;
+    }
 }

@@ -7,6 +7,10 @@ import com.caxerx.memoryvisualizer4j.layout.objectlayout.ObjectLayoutMap;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Objects;
+
 public class WebUIVisualizer implements MemoryVisualizer {
     @Inject
     public StickyBroadcaster broadcaster;
@@ -14,14 +18,23 @@ public class WebUIVisualizer implements MemoryVisualizer {
     @Inject
     public ObjectMapGenerator objectMapGenerator;
 
+    private final LinkedList<Object> registeredObject = new LinkedList<>();
+
     @Override
-    public void visualizeObject(Object object) {
-        visualizeObjectMap(objectMapGenerator.generateObjectMap(object));
+    public MemoryVisualizer registerObject(Object... object) {
+        if (object == null) return this;
+        object = Arrays.stream(object).filter(Objects::nonNull).toArray();
+        registeredObject.addAll(Arrays.asList(object));
+        return this;
     }
 
     @Override
-    public void visualizeObjectMap(ObjectLayoutMap objectLayout) {
+    public MemoryVisualizer visualize() {
         Gson gson = new Gson();
-        broadcaster.broadcastSticky(gson.toJson(new ObjectMapMessage(objectLayout.getEntryPoint().getType(), System.currentTimeMillis(), objectLayout)));
+        for (Object obj : registeredObject) {
+            ObjectLayoutMap objectMap = objectMapGenerator.generateObjectMap(obj);
+            broadcaster.broadcastSticky(new ObjectMapMessage(objectMap.getEntryPoint().getType(), System.currentTimeMillis(), objectMap));
+        }
+        return this;
     }
 }

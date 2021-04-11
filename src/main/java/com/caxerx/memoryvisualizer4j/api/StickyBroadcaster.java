@@ -1,5 +1,7 @@
 package com.caxerx.memoryvisualizer4j.api;
 
+import com.caxerx.memoryvisualizer4j.implementation.visualizer.ObjectMapMessage;
+
 /**
  * Sticky Broadcasts announce information that remains accessible.
  */
@@ -7,7 +9,7 @@ public interface StickyBroadcaster {
     /**
      * Create a sticky broadcast.
      *
-     * @param string Content of the broadcast.
+     * @param message Message to broadcast.
      */
-    void broadcastSticky(String string);
+    void broadcastSticky(ObjectMapMessage message);
 }
