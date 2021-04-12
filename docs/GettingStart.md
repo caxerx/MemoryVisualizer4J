@@ -9,7 +9,7 @@ First, download the library from the [Release Page on Github](https://github.com
 
 
 ## Setup as dependency
-After downloaded the library, you need to setup the library as dependency to use the MemoryVisualizer4J API. You only need to check the corrsponding IDE section that you are using.
+After downloaded the library, you need to setup the library as dependency to use the MemoryVisualizer4J API. You only need to check the corresponding IDE section that you are using.
 
 ### IntelliJ IDEA
 First, choice `File > Project Structure` on the menu bar.
@@ -37,7 +37,7 @@ On the `Projects` Panel, select `Libraries > Add JAR/Folder`
 
 ![](images/netbeans-add-jar.png)  
 
-After than, select the MemoryVisualizer4J library file you just downloaded. Then click `Open`. Then back to the main page and you are finished the setup.
+After that, select the MemoryVisualizer4J library file you just downloaded. Then click `Open`. Then back to the main page and you are finished the setup.
 ![](images/netbeans-openfile.png)  
 
 ### Eclipse
@@ -49,7 +49,7 @@ On the `Properties` Panel, Select `Java Build Path > Libraries` and Choice `Clas
 ![](images/eclipse-add-ext-jars.png)  
 
 
-After than, select the MemoryVisualizer4J library file you just downloaded. Then click `Open`. 
+After that, select the MemoryVisualizer4J library file you just downloaded. Then click `Open`. 
 ![](images/eclipse-open-file.png)  
 
 After that, click `Apply and Close` on the `Properties` Panel. Then back to the main page and you are finished the setup.
@@ -78,3 +78,5 @@ Then, try to run the program, you should see these line appeared on your console
 [main] INFO VisualizerWebServer - Visualizer Service started at: http://localhost:20000
 [main] INFO VisualizerWebServer - Visualizer Service started. Application will not stop until manually terminate.
 ```
+
+For more information about how to user the Visualizer UI, check [Introduce to Visualizer UI](./IntroduceToVisualizerUI)
